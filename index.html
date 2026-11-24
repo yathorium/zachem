@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#071426">
+  <title>С Новым 2027 годом — ИС 1.24</title>
+  <style>
+    :root {
+      --bg: #071426;
+      --panel: rgba(10, 27, 49, .82);
+      --mint: #5fffe0;
+      --blue: #65c8ff;
+      --gold: #ffd76a;
+      --muted: #a9bfd4;
+      --line: rgba(116, 255, 226, .25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { min-height: 100%; }
+    body {
+      min-height: 100vh;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      padding: 28px 16px;
+      overflow-x: hidden;
+      color: #f5fbff;
+      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse at 15% 15%, rgba(0, 191, 166, .18), transparent 36%),
+        radial-gradient(ellipse at 85% 80%, rgba(68, 126, 255, .18), transparent 38%),
+        linear-gradient(145deg, #071426, #0b1d35 55%, #06101f);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .28;
+      background-image: radial-gradient(rgba(255,255,255,.7) .7px, transparent .7px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom, black, transparent 90%);
+    }
+    canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    #matrix { z-index: 0; opacity: .15; }
+    #confetti { z-index: 5; }
+    .shell {
+      position: relative;
+      z-index: 2;
+      width: min(100%, 520px);
+      padding: 1px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, rgba(95,255,224,.8), rgba(101,200,255,.24), rgba(255,215,106,.55));
+      box-shadow: 0 28px 90px rgba(0,0,0,.42), 0 0 55px rgba(43, 230, 205, .10);
+      animation: appear .8s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .screen {
+      min-height: 590px;
+      padding: 34px clamp(22px, 5vw, 42px) 30px;
+      text-align: center;
+      border-radius: 29px;
+      background: linear-gradient(155deg, rgba(12,32,57,.96), rgba(7,20,38,.96));
+      backdrop-filter: blur(18px);
+      transition: opacity .45s ease, transform .45s ease;
+    }
+    .hidden { display: none; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 13px;
+      margin-bottom: 20px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--mint);
+      background: rgba(95,255,224,.07);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: "✦"; color: var(--gold); font-size: 13px; }
+    h1 {
+      margin: 0 auto 10px;
+      color: #f6fdff;
+      font-size: clamp(26px, 6vw, 35px);
+      line-height: 1.12;
+      letter-spacing: -.04em;
+      text-wrap: balance;
+    }
+    h1 .accent { color: var(--mint); }
+    .subtitle {
+      max-width: 360px;
+      margin: 0 auto 18px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .tree-wrap {
+      width: 220px;
+      height: 225px;
+      margin: 0 auto 15px;
+      display: grid;
+      place-items: center;
+      filter: drop-shadow(0 12px 24px rgba(0, 245, 212, .12));
+    }
+    .tree-wrap svg { width: 100%; height: 100%; overflow: visible; }
+    .bulb { animation: twinkle 1.8s ease-in-out infinite alternate; }
+    .bulb:nth-of-type(2n) { animation-delay: -.7s; }
+    .bulb:nth-of-type(3n) { animation-delay: -1.2s; }
+    @keyframes twinkle {
+      from { opacity: .55; filter: drop-shadow(0 0 2px currentColor); }
+      to { opacity: 1; filter: drop-shadow(0 0 10px currentColor); }
+    }
+    .field {
+      width: 100%;
+      padding: 15px 17px;
+      margin: 3px 0 12px;
+      border: 1px solid rgba(145,180,215,.28);
+      border-radius: 14px;
+      outline: none;
+      color: white;
+      background: rgba(3,13,27,.72);
+      text-align: center;
+      font: inherit;
+      font-size: 15px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .field::placeholder { color: #7892ad; }
+    .field:focus { border-color: var(--mint); box-shadow: 0 0 0 4px rgba(95,255,224,.1); }
+    .primary, .secondary {
+      width: 100%;
+      min-height: 50px;
+      padding: 14px 18px;
+      border: 0;
+      border-radius: 14px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      transition: transform .2s, filter .2s, background .2s;
+    }
+    .primary {
+      color: #061726;
+      background: linear-gradient(100deg, var(--mint), var(--blue));
+      box-shadow: 0 9px 25px rgba(40, 215, 206, .2);
+    }
+    .primary:hover, .secondary:hover { filter: brightness(1.08); transform: translateY(-2px); }
+    button:active { transform: translateY(0) scale(.985); }
+    button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+    .hint { margin-top: 13px; color: #7892ad; font-size: 11px; }
+    .terminal {
+      margin: 22px 0 18px;
+      padding: 16px 17px;
+      border: 1px solid rgba(95,255,224,.18);
+      border-radius: 15px;
+      background: rgba(2,10,21,.78);
+      text-align: left;
+      box-shadow: inset 0 1px rgba(255,255,255,.03);
+      overflow: hidden;
+    }
+    .terminal-top { display: flex; align-items: center; gap: 6px; margin-bottom: 13px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #ff6d78; }
+    .dot:nth-child(2) { background: var(--gold); }
+    .dot:nth-child(3) { background: #63e6a5; }
+    .terminal-label { margin-left: auto; color: #607d98; font-size: 9px; letter-spacing: .12em; }
+    .code-line {
+      color: #b9d5e9;
+      font: 12px/1.8 "SFMono-Regular", Consolas, monospace;
+      white-space: nowrap;
+      overflow-x: auto;
+    }
+    .kw { color: #ff8c9b; }
+    .fn { color: #d8a7ff; }
+    .str { color: #8ed6ff; }
+    .prompt { color: var(--gold); margin-top: 4px; }
+    .wish-list { display: grid; gap: 10px; margin-top: 17px; }
+    .wish-card {
+      display: flex;
+      gap: 11px;
+      align-items: flex-start;
+      padding: 14px 15px;
+      border: 1px solid rgba(95,255,224,.13);
+      border-radius: 13px;
+      background: linear-gradient(110deg, rgba(95,255,224,.09), rgba(101,200,255,.06));
+      color: #d8e9f6;
+      text-align: left;
+      font-size: 13px;
+      line-height: 1.55;
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    .wish-card.fly-in { animation: slide-in .55s cubic-bezier(.2,.8,.2,1) forwards; }
+    .wish-icon { flex: 0 0 auto; font-size: 19px; }
+    .wish-card b { color: var(--mint); }
+    @keyframes slide-in { to { opacity: 1; transform: translateY(0); } }
+    .signature { margin: 20px 0 15px; color: var(--mint); font-size: 13px; font-weight: 700; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .secondary {
+      min-height: 44px;
+      padding: 11px;
+      color: var(--mint);
+      border: 1px solid rgba(95,255,224,.38);
+      background: rgba(95,255,224,.06);
+      font-size: 12px;
+    }
+    .footer { margin-top: 17px; color: #6f89a3; font-size: 10px; letter-spacing: .04em; }
+    @keyframes appear { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
+    @media (max-width: 420px) {
+      body { padding: 14px 10px; }
+      .screen { min-height: auto; padding: 28px 19px 24px; }
+      .tree-wrap { height: 200px; width: 195px; }
+      .actions { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix" aria-hidden="true"></canvas>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <main class="shell">
+    <section class="screen" id="screen1" aria-labelledby="welcomeTitle">
+      <div class="eyebrow">09.02.07 · ГРУППА ИС 1.24</div>
+      <h1 id="welcomeTitle">Новогодний <span class="accent">терминал</span></h1>
+      <p class="subtitle">Запусти праздничную программу — и получи персональное поздравление от нашей группы ✨</p>
+
+      <div class="tree-wrap" aria-label="Новогодняя ёлка" role="img">
+        <svg viewBox="0 0 220 240" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="tree" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#1a9b83"/><stop offset="1" stop-color="#07554f"/>
+            </linearGradient>
+            <linearGradient id="trunk" x1="0" y1="0" x2="1" y2="1">
+              <stop stop-color="#a66a42"/><stop offset="1" stop-color="#583b32"/>
+            </linearGradient>
+          </defs>
+          <path d="M94 190h32v34H94z" fill="url(#trunk)" stroke="#e2b17a" stroke-width="1.5"/>
+          <path d="M110 19 65 91h25l-43 61h35l-48 47h152l-48-47h35l-43-61h25z" fill="url(#tree)" stroke="#6affdf" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M110 19v180M65 91h45M47 152h63" stroke="#a7ffe9" stroke-opacity=".18" stroke-width="2"/>
+          <path d="M110 8l5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2z" fill="#ffd76a" stroke="#fff0b3" stroke-width="1"/>
+          <path d="M80 108q28 18 55 0M62 164q48 24 98 0" fill="none" stroke="#ffd76a" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+          <circle class="bulb" cx="82" cy="119" r="5" fill="#ff7c9a"/>
+          <circle class="bulb" cx="139" cy="110" r="5" fill="#65c8ff"/>
+          <circle class="bulb" cx="110" cy="145" r="5" fill="#ffd76a"/>
+          <circle class="bulb" cx="70" cy="170" r="5" fill="#65c8ff"/>
+          <circle class="bulb" cx="150" cy="174" r="5" fill="#ff7c9a"/>
+          <circle class="bulb" cx="110" cy="83" r="4" fill="#ffd76a"/>
+          <path d="M82 225h56" stroke="#6affdf" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+        </svg>
+      </div>
+
+      <form id="greetingForm">
+        <input class="field" type="text" id="userName" placeholder="Как тебя зовут?" maxlength="25" autocomplete="given-name" aria-label="Твоё имя">
+        <button class="primary" type="submit">Запустить поздравление <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="hint">Нажми кнопку — магия начнётся 🎄</p>
+    </section>
+
+    <section class="screen hidden" id="screen2" aria-labelledby="greetTitle" aria-live="polite">
+      <div class="eyebrow">BUILD SUCCESSFUL · 2027</div>
+      <h1 id="greetTitle">С Новым годом!</h1>
+      <p class="subtitle">Пусть новый год принесёт яркие идеи, большие победы и море поводов для улыбок.</p>
+
+      <div class="terminal" aria-label="Праздничный программный код">
+        <div class="terminal-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal-label">new_year.py</span></div>
+        <div class="code-line"><span class="kw">from</span> group_IS_1_24 <span class="kw">import</span> NewYear2027</div>
+        <div class="code-line"><span class="kw">def</span> <span class="fn">send_wishes</span>(user):</div>
+        <div class="code-line">&nbsp;&nbsp;<span class="kw">return</span> f<span class="str">"С праздником, {user}!"</span></div>
+        <div class="code-line prompt">&gt;&gt;&gt; Все пожелания успешно доставлены ✓</div>
+      </div>
+
+      <div class="wish-list" id="wishList">
+        <div class="wish-card"><span class="wish-icon">💻</span><span><b>Код без багов</b><br>Пусть все проекты компилируются с первого раза!</span></div>
+        <div class="wish-card"><span class="wish-icon">⚡</span><span><b>Энергии на максимум</b><br>Крепкого здоровья, вдохновения и 0% выгорания.</span></div>
+        <div class="wish-card"><span class="wish-icon">🚀</span><span><b>Успешный деплой</b><br>Лёгкой учёбы, крутых идей и ярких побед в 2027 году!</span></div>
+      </div>
+
+      <p class="signature">С теплом, ваша группа ИС 1.24 🎄</p>
+      <div class="actions">
+        <button class="secondary" id="replayBtn" type="button">🎉 Повторить салют</button>
+        <button class="secondary" id="backBtn" type="button">↩ Ввести другое имя</button>
+      </div>
+      <div class="footer">HAPPY NEW YEAR · VERSION 2027.0</div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const matrixCanvas = document.getElementById('matrix');
+      const matrixCtx = matrixCanvas.getContext('2d');
+      const confettiCanvas = document.getElementById('confetti');
+      const confettiCtx = confettiCanvas.getContext('2d');
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let drops = [];
+      let particles = [];
+      let animationFrame = null;
+      let matrixFrame = null;
+      let audioContext = null;
+
+      function resizeCanvases() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        [matrixCanvas, confettiCanvas].forEach(canvas => {
+          canvas.width = Math.floor(window.innerWidth * dpr);
+          canvas.height = Math.floor(window.innerHeight * dpr);
+          canvas.style.width = window.innerWidth + 'px';
+          canvas.style.height = window.innerHeight + 'px';
+          const ctx = canvas.getContext('2d');
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        });
+        const columns = Math.ceil(window.innerWidth / 19);
+        drops = Array(columns).fill(0).map(() => Math.random() * -30);
+      }
+
+      function drawMatrix() {
+        if (reducedMotion) return;
+        const w = window.innerWidth, h = window.innerHeight;
+        matrixCtx.fillStyle = 'rgba(7, 20, 38, .12)';
+        matrixCtx.fillRect(0, 0, w, h);
+        matrixCtx.fillStyle = '#5fffe0';
+        matrixCtx.font = '12px monospace';
+        const chars = '01ИС124{}[]<>/';
+        drops.forEach((drop, i) => {
+          matrixCtx.fillText(chars[Math.floor(Math.random() * chars.length)], i * 19, drop * 19);
+          drops[i] = drop * 19 > h && Math.random() > .975 ? -2 : drop + .65;
+        });
+        matrixFrame = requestAnimationFrame(drawMatrix);
+      }
+
+      function playTune() {
+        try {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return;
+          audioContext = audioContext || new AudioCtx();
+          if (audioContext.state === 'suspended') audioContext.resume();
+          // Короткая оригинальная праздничная мелодия, созданная синтезатором браузера.
+          const notes = [[523.25,.16],[659.25,.16],[783.99,.24],[659.25,.16],[783.99,.16],[1046.5,.34],[783.99,.16],[659.25,.16],[587.33,.3]];
+          let time = audioContext.currentTime + .04;
+          notes.forEach(([frequency, duration]) => {
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, time);
+            gain.gain.setValueAtTime(.0001, time);
+            gain.gain.exponentialRampToValueAtTime(.09, time + .025);
+            gain.gain.exponentialRampToValueAtTime(.0001, time + duration);
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start(time);
+            oscillator.stop(time + duration + .02);
+            time += duration + .045;
+          });
+        } catch (error) {
+          // Если браузер запрещает звук, поздравление всё равно работает.
+        }
+      }
+
+      function launchConfetti() {
+        if (reducedMotion) return;
+        const colors = ['#5fffe0', '#ffd76a', '#ff7c9a', '#65c8ff', '#c5a2ff', '#ffffff'];
+        for (let i = 0; i < 150; i++) {
+          particles.push({
+            x: window.innerWidth / 2 + (Math.random() - .5) * 70,
+            y: window.innerHeight * .42,
+            vx: (Math.random() - .5) * 13,
+            vy: (Math.random() - .8) * 15,
+            gravity: .22 + Math.random() * .12,
+            size: 3 + Math.random() * 6,
+            rotation: Math.random() * Math.PI,
+            spin: (Math.random() - .5) * .18,
+            color: colors[Math.floor(Math.random() * colors.length)]
+          });
+        }
+        if (!animationFrame) updateConfetti();
+      }
+
+      function updateConfetti() {
+        confettiCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        particles = particles.filter(p => p.y < window.innerHeight + 25);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.vx *= .992;
+          p.rotation += p.spin;
+          confettiCtx.save();
+          confettiCtx.translate(p.x, p.y);
+          confettiCtx.rotate(p.rotation);
+          confettiCtx.fillStyle = p.color;
+          confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * .58);
+          confettiCtx.restore();
+        });
+        if (particles.length) animationFrame = requestAnimationFrame(updateConfetti);
+        else {
+          animationFrame = null;
+          confettiCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        }
+      }
+
+      function showWishes() {
+        document.querySelectorAll('.wish-card').forEach((card, index) => {
+          card.classList.remove('fly-in');
+          void card.offsetWidth;
+          setTimeout(() => card.classList.add('fly-in'), 180 + index * 380);
+        });
+      }
+
+      function compileGreeting(event) {
+        event.preventDefault();
+        const enteredName = document.getElementById('userName').value.trim();
+        const name = enteredName || 'Друг';
+        // textContent не позволяет введённому имени интерпретироваться как HTML.
+        document.getElementById('greetTitle').textContent = `${name}, с Новым 2027 годом!`;
+        document.getElementById('screen1').classList.add('hidden');
+        const screen2 = document.getElementById('screen2');
+        screen2.classList.remove('hidden');
+        playTune();
+        launchConfetti();
+        showWishes();
+      }
+
+      document.getElementById('greetingForm').addEventListener('submit', compileGreeting);
+      document.getElementById('replayBtn').addEventListener('click', () => {
+        playTune();
+        launchConfetti();
+        showWishes();
+      });
+      document.getElementById('backBtn').addEventListener('click', () => {
+        document.getElementById('screen2').classList.add('hidden');
+        document.getElementById('screen1').classList.remove('hidden');
+        document.getElementById('userName').focus();
+      });
+      window.addEventListener('resize', resizeCanvases, { passive: true });
+      window.addEventListener('pagehide', () => {
+        if (matrixFrame) cancelAnimationFrame(matrixFrame);
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        if (audioContext) audioContext.close();
+      });
+
+      resizeCanvases();
+      drawMatrix();
+    })();
+  </script>
+</body>
+</html>
